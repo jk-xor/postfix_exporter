@@ -5,6 +5,9 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/rand"
+	"strconv"
+	"time"
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/nxadm/tail"
@@ -36,6 +39,7 @@ func NewFileLogSource(path string, config tail.Config) (*FileLogSource, error) {
 }
 
 func (s *FileLogSource) Close() error {
+	defer s.tailer.Cleanup()
 	go func() {
 		// Stop() waits for the tailer goroutine to shut down, but it
 		// can be blocking on sending on the Lines channel...
@@ -53,7 +57,10 @@ func (s *FileLogSource) Path() string {
 func (s *FileLogSource) Read(ctx context.Context) (string, error) {
 	select {
 	case line, ok := <-s.tailer.Lines:
-		if !ok {
+		rand.Seed(time.Now().Unix())
+		forcedUnhealthy := rand.Intn(10) == 0
+		slog.Info("Tailing log file, forcedUnhealthy: " + strconv.FormatBool(forcedUnhealthy))
+		if !ok || forcedUnhealthy {
 			s.unhealthy = true
 			if tailErr := s.tailer.Tomb.Err(); tailErr != nil && !errors.Is(tailErr, tomb.ErrStillAlive) {
 				return "", tailErr
