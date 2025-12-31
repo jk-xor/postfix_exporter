@@ -66,10 +66,6 @@ func (s *FileLogSource) Read(ctx context.Context) (string, error) {
 	}
 }
 
-func (s *FileLogSource) Watchdog(ctx context.Context) bool {
-	return s.unhealthy
-}
-
 // A fileLogSourceFactory is a factory than can create log sources
 // from command line flags.
 //
@@ -116,5 +112,5 @@ func (f *fileLogSourceFactory) Watchdog(ctx context.Context) bool {
 	if f.source == nil {
 		return false
 	}
-	return f.source.Watchdog(ctx)
+	return f.source.unhealthy
 }
